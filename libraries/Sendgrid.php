@@ -1,20 +1,23 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * CodeIgniter SendGrid Newsletter Class
+ * SendGrid Newsletter Library for CodeIgniter
  *
- * Work with the SendGrid Newsletter API
+ * Wrapper for working with the SendGrid Newsletter API
  *
- * @package        	CodeIgniter
- * @subpackage    	Libraries
- * @category    	Libraries
- * @author        	Bold
+ * @package CodeIgniter
+ * @version 0.0.1
+ * @author Bold
+ * @link http://hellobold.com
  */
 class Sendgrid
 {
 
-	protected $api_endpoint = 'https://sendgrid.com/api/';
+	protected $api_endpoint  = 'https://sendgrid.com/api/';
 	protected $error_message = '';
+	protected $api_user      = '';
+	protected $api_key       = '';
+	protected $api_format    = 'json';
 	protected $ci;
 
 	/**
@@ -28,9 +31,34 @@ class Sendgrid
 		$this->ci =& get_instance();
 
 		// load sparks
-		$this->ci->load->spark('curl/1.2.0');
+		$this->ci->load->spark('restclient/2.0.0');
+
+		// initialize parameters
+		$this->initialize($params);
 
 		log_message('debug', 'SendGrid Class Initialized');
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Initialize settings
+	 *
+	 * @access public
+	 * @param array $params Settings parameters
+	 **/
+	public function initialize($params = array())
+	{
+		if (is_array($params) && ! empty($params))
+		{
+			foreach($params as $key => $val)
+			{
+				if (isset($this->$key))
+				{
+					$this->$key = $val;
+				}
+			}
+		}
 	}
 
 	// --------------------------------------------------------------------
@@ -48,7 +76,7 @@ class Sendgrid
 	 **/
 	public function add_newsletter($identity, $name, $subject, $html, $text)
 	{
-		return $this->_send('newsletter/add.json', array(
+		return $this->_send('newsletter/add.' . $this->api_format, array(
 			'identity' => $identity,
 			'name'     => $name,
 			'subject'  => $subject,
@@ -73,7 +101,7 @@ class Sendgrid
 	 **/
 	public function edit_newsletter($identity, $name, $new_name, $subject, $text, $html)
 	{
-		return $this->_send('newsletter/edit.json', array(
+		return $this->_send('newsletter/edit.' . $this->api_format, array(
 			'name'     => $name,
 			'newname'  => $new_name,
 			'identity' => $identity,
@@ -94,7 +122,7 @@ class Sendgrid
 	 **/
 	public function get_newsletter($name)
 	{
-		return $this->_send('newsletter/get.json', array('name' => $name));
+		return $this->_send('newsletter/get.' . $this->api_format, array('name' => $name));
 	}
 
 	// --------------------------------------------------------------------
@@ -104,16 +132,16 @@ class Sendgrid
 	 *
 	 * @access public
 	 * @param string $name Newsletter name (optional)
-	 * @return mixed
+	 * @return array
 	 **/
 	public function list_newsletters($name = NULL)
 	{
 		if (is_null($name))
 		{
-			return $this->_send('newsletter/list.json');
+			return $this->_send('newsletter/list.' . $this->api_format);
 		}
 
-		return $this->_send('newsletter/list.json', array('name' => $name));
+		return $this->_send('newsletter/list.' . $this->api_format, array('name' => $name));
 	}
 
 	// --------------------------------------------------------------------
@@ -127,7 +155,7 @@ class Sendgrid
 	 **/
 	public function delete_newsletter($name)
 	{
-		return $this->_send('newsletter/delete.json', array('name' => $name));
+		return $this->_send('newsletter/delete.' . $this->api_format, array('name' => $name));
 	}
 
 	// --------------------------------------------------------------------
@@ -149,7 +177,7 @@ class Sendgrid
 			$data['name'] = $name;
 		}
 
-		return $this->_send('newsletter/lists/add.json', $data);
+		return $this->_send('newsletter/lists/add.' . $this->api_format, $data);
 	}
 
 	// --------------------------------------------------------------------
@@ -163,16 +191,16 @@ class Sendgrid
 	 *
 	 * @access public
 	 * @param string $list List name (optiona)
-	 * @return mixed
+	 * @return array
 	 **/
-	public function get_lists($list=NULL)
+	public function get_lists($list = NULL)
 	{
 		if (is_null($list))
 		{
-			return $this->_send('newsletter/lists/get.json');
+			return $this->_send('newsletter/lists/get.' . $this->api_format);
 		}
 
-		return $this->_send('newsletter/lists/get.json', array('list' => $list));
+		return $this->_send('newsletter/lists/get.' . $this->api_format, array('list' => $list));
 	}
 
 	// --------------------------------------------------------------------
@@ -193,55 +221,101 @@ class Sendgrid
 
 	// --------------------------------------------------------------------
 
+	/**
+	 * Add a list to a newsletter
+	 *
+	 * @access public
+	 * @param string $name Newsletter name
+	 * @param string $list Newsletter list name
+	 * @return bool
+	 **/
 	public function add_recipients($name, $list)
 	{
-		return $this->_send('newsletter/recipients/add.json', array('name' => $name, 'list' => $list));
+		return $this->_send('newsletter/recipients/add.' . $this->api_format, array('name' => $name, 'list' => $list));
 	}
 
 	// --------------------------------------------------------------------
 
+	/**
+	 * Retrieve the lists assigned to a particular newsletter
+	 *
+	 * @access public
+	 * @param string $name Newsletter name
+	 * @return mixed
+	 **/
 	public function get_recipients($name)
 	{
-		return $this->_send('newsletter/recipients/get.json', array('name' => $name));
+		return $this->_send('newsletter/recipients/get.' . $this->api_format, array('name' => $name));
 	}
 
 	// --------------------------------------------------------------------
 
+	/**
+	 * Remove a list from a newsletter
+	 *
+	 * @access public
+	 * @param string $name Newsletter name
+	 * @param string $list Newsletter list name
+	 * @return bool
+	 **/
 	public function delete_recipients($name, $list)
 	{
-		return $this->_send('newsletter/recipients/delete.json', array('name' => $name, 'list' => $list));
+		return $this->_send('newsletter/recipients/delete.' . $this->api_format, array('name' => $name, 'list' => $list));
 	}
 
 	// --------------------------------------------------------------------
 
-	public function add_schedule($name, $at=NULL, $after=NULL)
+	/**
+	 * Schedule a delivery time for an existing newsletter
+	 *
+	 * @access public
+	 * @param string $name Newsletter name
+	 * @param string $at Date/time to deliver the newsletter (optional)
+	 * @param int $after Number of minutes in the future to schedule delivery (optional)
+	 * @return bool
+	 **/
+	public function add_schedule($name, $at = NULL, $after = NULL)
 	{
 		$data = array('name' => $name);
 
 		if ( ! is_null($at))
 		{
-			$data['at'] = date(DATE_ISO8601, human_to_unix($at));
+			$data['at'] = date(DATE_ISO8601, strtotime($at));
 		}
 		elseif ( ! is_null($after))
 		{
 			$data['after'] = $after;
 		}
 
-		return $this->_send('newsletter/schedule/add.json', $data) !== FALSE;
+		return $this->_send('newsletter/schedule/add.' . $this->api_format, $data) !== FALSE;
 	}
 
 	// --------------------------------------------------------------------
 
+	/**
+	 * Retrieve the scheduled delivery time for a particular newsletter
+	 *
+	 * @access public
+	 * @param string $name Newsletter name
+	 * @return mixed
+	 **/
 	public function get_schedule($name)
 	{
-		return $this->_send('newsletter/schedule/get.json', array('name' => $name));
+		return $this->_send('newsletter/schedule/get.' . $this->api_format, array('name' => $name));
 	}
 
 	// --------------------------------------------------------------------
 
+	/**
+	 * Cancel a scheduled send for a newsletter
+	 *
+	 * @access public
+	 * @param string $name Newsletter name
+	 * @return bool
+	 **/
 	public function delete_schedule($name)
 	{
-		return $this->_send('newsletter/schedule/delete.json', array('name' => $name));
+		return $this->_send('newsletter/schedule/delete.' . $this->api_format, array('name' => $name));
 	}
 
 	// --------------------------------------------------------------------
@@ -258,9 +332,21 @@ class Sendgrid
 
 	// --------------------------------------------------------------------
 
-	public function list_identities($identity)
+	/**
+	 * Retrieve a list of all identities or check if an identity exists
+	 *
+	 * @access public
+	 * @param string $identity Identity name (optional)
+	 * @return mixed
+	 **/
+	public function list_identities($identity = NULL)
 	{
-		return $this->_send('newsletter/identity/list.json', array('identity' => $identity));
+		if (is_null($identity))
+		{
+			return $this->_send('newsletter/identity/list.' . $this->api_format);
+		}
+
+		return $this->_send('newsletter/identity/list.' . $this->api_format, array('identity' => $identity));
 	}
 
 	// --------------------------------------------------------------------
@@ -269,41 +355,70 @@ class Sendgrid
 
 	// --------------------------------------------------------------------
 
+	/**
+	 * Get error message
+	 *
+	 * @access public
+	 * @return string
+	 **/
+	public function error_message()
+	{
+		return $this->error_message;
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Send the request to SendGrid
+	 *
+	 * @access private
+	 * @param string $url The portion of the URL after the API endpoint
+	 * @param array $data The data to be sent along with the request (optional)
+	 * @return mixed
+	 **/
 	private function _send($url, $data = array())
 	{
-		// load REST client library
-		$this->ci->load->spark('restclient/2.0.0');
-
-		// get credentials
+		// set credentials
 		$creds = array(
-			'api_user' => config_item('api_user'),
-			'api_key'  => config_item('api_key')
+			'api_user' => $this->api_user,
+			'api_key'  => $this->api_key
 		);
 
+		// initialize rest library
 		$this->ci->rest->initialize(array('server' => $this->api_endpoint));
-		$this->ci->rest->format('json');
+		$this->ci->rest->format($this->api_format);
 
 		// merge credentials into data
 		$data = array_merge($creds, $data);
 
+		// post request
 		$response = $this->ci->rest->post($url, $data);
 
-		// check for non-2XX response codes
-		if (substr($this->ci->rest->status(), 0, 1) != 2)
+		// check for 4xx reponse code
+		if (substr($this->ci->rest->status(), 0, 1) == 4)
 		{
-			$this->error_message = 'The response from SendGrid failed';
+			$this->error_message = $response->error . '.';
 			return FALSE;
 		}
+		// check for 5xx response codes
+        elseif (substr($this->ci->rest->status(), 0, 1) == 5)
+        {
+            $this->error_message = 'Access to SendGrid failed. Please try again later.';
+            return FALSE;
+        }
+		// check for an error message response
 		elseif (isset($response->error))
 		{
-			$this->error_message = $response->error;
+			$this->error_message = $response->error . '.';
 			return FALSE;
 		}
+		// check for a success message response
 		elseif (isset($response->success))
 		{
 			return TRUE;
 		}
 
+		// return the response data
 		return $response;
 	}
 
