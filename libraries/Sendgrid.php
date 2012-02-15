@@ -25,7 +25,7 @@ class Sendgrid
 	 *
 	 * @access public
 	 * @param array params Initialization parameters
-	 **/
+	 */
 	public function __construct($params = array())
 	{
 		$this->ci =& get_instance();
@@ -46,7 +46,7 @@ class Sendgrid
 	 *
 	 * @access public
 	 * @param array $params Settings parameters
-	 **/
+	 */
 	public function initialize($params = array())
 	{
 		if (is_array($params) && ! empty($params))
@@ -59,12 +59,18 @@ class Sendgrid
 				}
 			}
 		}
+
+		// set format to json if an invalid format was provided
+		if ($this->api_format != 'xml' && $this->api_format != 'json')
+		{
+			$this->api_format = 'json';
+		}
 	}
 
 	// --------------------------------------------------------------------
 
 	/**
-	 * Add a newsletter
+	 * Create a newsletter
 	 *
 	 * @access public
 	 * @param string $identity SendGrid identity
@@ -73,7 +79,7 @@ class Sendgrid
 	 * @param string $html HTML version of newsletter body
 	 * @param string $text Text-only version of newsletter body
 	 * @return bool
-	 **/
+	 */
 	public function add_newsletter($identity, $name, $subject, $html, $text)
 	{
 		return $this->_send('newsletter/add.' . $this->api_format, array(
@@ -88,7 +94,7 @@ class Sendgrid
 	// --------------------------------------------------------------------
 
 	/**
-	 * Edit an existing newsletter
+	 * Edit a newsletter
 	 *
 	 * @access public
 	 * @param string $identity SendGrid identity
@@ -98,7 +104,7 @@ class Sendgrid
 	 * @param string $html HTML version of newsletter body
 	 * @param string $text Text-only version of newsletter body
 	 * @return bool
-	 **/
+	 */
 	public function edit_newsletter($identity, $name, $new_name, $subject, $text, $html)
 	{
 		return $this->_send('newsletter/edit.' . $this->api_format, array(
@@ -114,12 +120,12 @@ class Sendgrid
 	// --------------------------------------------------------------------
 
 	/**
-	 * Get an existing newsletter
+	 * Get the contents of an existing newsletter
 	 *
 	 * @access public
 	 * @param string $name Newsletter name
 	 * @return mixed
-	 **/
+	 */
 	public function get_newsletter($name)
 	{
 		return $this->_send('newsletter/get.' . $this->api_format, array('name' => $name));
@@ -128,13 +134,13 @@ class Sendgrid
 	// --------------------------------------------------------------------
 
 	/**
-	 * List newsletters in account
+	 * Retrieve a list of all newsletters
 	 *
 	 * @access public
 	 * @param string $name Newsletter name (optional)
 	 * @return array
-	 **/
-	public function list_newsletters($name = NULL)
+	 */
+	public function list_newsletters($name=NULL)
 	{
 		if (is_null($name))
 		{
@@ -147,12 +153,12 @@ class Sendgrid
 	// --------------------------------------------------------------------
 
 	/**
-	 * Delete an individual newsletter
+	 * Delete a newsletter
 	 *
 	 * @access public
 	 * @param string $name Newsletter name
 	 * @return mixed
-	 **/
+	 */
 	public function delete_newsletter($name)
 	{
 		return $this->_send('newsletter/delete.' . $this->api_format, array('name' => $name));
@@ -161,17 +167,18 @@ class Sendgrid
 	// --------------------------------------------------------------------
 
 	/**
-	 * Add a new email list
+	 * Create a recipient list
 	 *
 	 * @access public
 	 * @param string $list Name of the list to create
 	 * @param string $name Column name to associate with the email address (optional)
 	 * @return bool
-	 **/
-	public function add_list($list, $name = NULL)
+	 */
+	public function add_list($list, $name=NULL)
 	{
 		$data = array('list' => $list);
 
+		// if a column name is provided, include it in the request
 		if (is_null($name))
 		{
 			$data['name'] = $name;
@@ -182,18 +189,29 @@ class Sendgrid
 
 	// --------------------------------------------------------------------
 
-	// stub for edit_list()
+	/**
+	 * Rename a list
+	 *
+	 * @access public
+	 * @param string $list Name of the list to rename
+	 * @param string $newlist The new name for the list
+	 * @return bool
+	 */
+	public function edit_list($list, $newlist)
+	{
+		return $this->_send('newsletter/lists/edit.' . $this->api_format, array('list' => $list, 'newlist' => $newlist));
+	}
 
 	// --------------------------------------------------------------------
 
 	/**
-	 * Get email lists in account
+	 * Retrieve all recipient lists or check if a particular list exists
 	 *
 	 * @access public
 	 * @param string $list List name (optiona)
 	 * @return array
-	 **/
-	public function get_lists($list = NULL)
+	 */
+	public function get_lists($list=NULL)
 	{
 		if (is_null($list))
 		{
@@ -205,30 +223,81 @@ class Sendgrid
 
 	// --------------------------------------------------------------------
 
-	// stub for delete_list()
-
-	// --------------------------------------------------------------------
-
-	// stub for add_email()
-
-	// --------------------------------------------------------------------
-
-	// stub for get_email()
-
-	// --------------------------------------------------------------------
-
-	// stub for delete_email()
+	/**
+	 * Delete a list
+	 *
+	 * @access public
+	 * @param string $list The name of the list to remove
+	 * @return bool
+	 */
+	public function delete_list($list)
+	{
+		return $this->_send('newsletter/lists/delete.' . $this->api_format, array('list' => $list));
+	}
 
 	// --------------------------------------------------------------------
 
 	/**
-	 * Add a list to a newsletter
+	 * Add one or more emails to a list
+	 *
+	 * @access public
+	 * @param string $list The list to which email addresses will be added
+	 * @param string $data Valid JSON string describing the entries (limit 1000). Ex: {"email":"address@domain.com","name":"Contact Name"}
+	 * @return bool
+	 */
+	public function add_list_emails($list, $data)
+	{
+		return $this->_send('newsletter/lists/email/add.' . $this->api_format, array('list' => $list, 'data' => $data));
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Retrieve the email addresses and associated fields for a particular list
+	 *
+	 * @access public
+	 * @param string $list The list to retrieve
+	 * @param string $email Optional email address or list of address to search for
+	 * @return string
+	 **/
+	public function get_list_emails($list, $email=NULL)
+	{
+		$data = array('list' => $list);
+
+		// if emails are provided, include them in the request
+		if ( ! is_null($email))
+		{
+			$data['email'] = $email;
+		}
+
+		return $this->_send('newsletter/lists/email/get.' . $this->api_format, $data);
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Remove one or more emails from a list
+	 *
+	 * @access public
+	 * @param string $list The name of the list from which emails will be removed
+	 * @param string $email The emaill address or addresses to be removed
+	 * @return bool
+	 */
+	public function delete_list_emails($list, $email)
+	{
+		return $this->_send('newsletter/lists/email/delete.' . $this->api_format, array('list' => $list, 'email' => $email));
+	}
+
+	// --------------------------------------------------------------------
+
+	/**
+	 * Add a recipient list to a newsletter
 	 *
 	 * @access public
 	 * @param string $name Newsletter name
 	 * @param string $list Newsletter list name
 	 * @return bool
-	 **/
+	 */
 	public function add_recipients($name, $list)
 	{
 		return $this->_send('newsletter/recipients/add.' . $this->api_format, array('name' => $name, 'list' => $list));
@@ -242,7 +311,7 @@ class Sendgrid
 	 * @access public
 	 * @param string $name Newsletter name
 	 * @return mixed
-	 **/
+	 */
 	public function get_recipients($name)
 	{
 		return $this->_send('newsletter/recipients/get.' . $this->api_format, array('name' => $name));
@@ -257,7 +326,7 @@ class Sendgrid
 	 * @param string $name Newsletter name
 	 * @param string $list Newsletter list name
 	 * @return bool
-	 **/
+	 */
 	public function delete_recipients($name, $list)
 	{
 		return $this->_send('newsletter/recipients/delete.' . $this->api_format, array('name' => $name, 'list' => $list));
@@ -273,8 +342,8 @@ class Sendgrid
 	 * @param string $at Date/time to deliver the newsletter (optional)
 	 * @param int $after Number of minutes in the future to schedule delivery (optional)
 	 * @return bool
-	 **/
-	public function add_schedule($name, $at = NULL, $after = NULL)
+	 */
+	public function add_schedule($name, $at=NULL, $after=NULL)
 	{
 		$data = array('name' => $name);
 
@@ -298,7 +367,7 @@ class Sendgrid
 	 * @access public
 	 * @param string $name Newsletter name
 	 * @return mixed
-	 **/
+	 */
 	public function get_schedule($name)
 	{
 		return $this->_send('newsletter/schedule/get.' . $this->api_format, array('name' => $name));
@@ -312,7 +381,7 @@ class Sendgrid
 	 * @access public
 	 * @param string $name Newsletter name
 	 * @return bool
-	 **/
+	 */
 	public function delete_schedule($name)
 	{
 		return $this->_send('newsletter/schedule/delete.' . $this->api_format, array('name' => $name));
@@ -320,15 +389,79 @@ class Sendgrid
 
 	// --------------------------------------------------------------------
 
-	// stub for add_identity()
+	/**
+	 * Create a new identity
+	 *
+	 * @access public
+	 * @param string $identity The title of the identity
+	 * @param string $name The address name to be used
+	 * @param string $email The email address
+	 * @param string $address The street address
+	 * @param string $city The city
+	 * @param string $state The state
+	 * @param string $zip The postal code
+	 * @param string $country The country
+	 * @return bool
+	 */
+	public function add_identity($identity, $name, $email, $address, $city, $state, $zip, $country)
+	{
+		return $this->_send('newsletter/identity/add.' . $this->api_format, array(
+			'identity' => $identity,
+			'name'     => $name,
+			'email'    => $email,
+			'address'  => $address,
+			'city'     => $city,
+			'state'    => $state,
+			'zip'      => $zip,
+			'country'  => $country
+		));
+	}
 
 	// --------------------------------------------------------------------
 
-	// stub for edit_identity()
+	/**
+	 * Edit an identity
+	 *
+	 * @access public
+	 * @param string $identity The title of the identity you wish to edit
+	 * @param string $newidentity The new title of the identity you are editing
+	 * @param string $name The address name to be used
+	 * @param string $email The email address
+	 * @param string $address The street address
+	 * @param string $city The city
+	 * @param string $state The state
+	 * @param string $zip The postal code
+	 * @param string $country The country
+	 * @return bool
+	 */
+	public function edit_identity($identity, $newidentity, $name, $email, $address, $city, $state, $zip, $country)
+	{
+		return $this->_send('newsletter/identity/edit.' . $this->api_format, array(
+			'identity'    => $identity,
+			'newidentity' => $newidentity,
+			'name'        => $name,
+			'email'       => $email,
+			'address'     => $address,
+			'city'        => $city,
+			'state'       => $state,
+			'zip'         => $zip,
+			'country'     => $country
+		));
+	}
 
 	// --------------------------------------------------------------------
 
-	// stub for get_identity()
+	/**
+	 * Retrieve a particular identity
+	 *
+	 * @access public
+	 * @param string $identity
+	 * @return mixed
+	 */
+	public function get_identity($identity)
+	{
+		return $this->_send('newsletter/identity/get.' . $this->api_format, array('identity' => $identity));
+	}
 
 	// --------------------------------------------------------------------
 
@@ -338,8 +471,8 @@ class Sendgrid
 	 * @access public
 	 * @param string $identity Identity name (optional)
 	 * @return mixed
-	 **/
-	public function list_identities($identity = NULL)
+	 */
+	public function list_identities($identity=NULL)
 	{
 		if (is_null($identity))
 		{
@@ -351,7 +484,17 @@ class Sendgrid
 
 	// --------------------------------------------------------------------
 
-	// stub for delete_identity()
+	/**
+	 * Delete an identity
+	 *
+	 * @access public
+	 * @param string $identity
+	 * @return bool
+	 */
+	public function delete_identity($identity)
+	{
+		return $this->_send('newsletter/identity/delete.' . $this->api_format, array('identity' => $identity));
+	}
 
 	// --------------------------------------------------------------------
 
@@ -360,7 +503,7 @@ class Sendgrid
 	 *
 	 * @access public
 	 * @return string
-	 **/
+	 */
 	public function error_message()
 	{
 		return $this->error_message;
@@ -375,7 +518,7 @@ class Sendgrid
 	 * @param string $url The portion of the URL after the API endpoint
 	 * @param array $data The data to be sent along with the request (optional)
 	 * @return mixed
-	 **/
+	 */
 	private function _send($url, $data = array())
 	{
 		// set credentials
