@@ -67,8 +67,8 @@ CodeIgniter-SendGrid-Newsletter is a CodeIgniter wrapper for the [SendGrid Newsl
 
 	// Initialize (not necessary if set in config)
 	$this->sendgrid_newsletter->initialize(array('api_user'   => 'my_username',
-	                                  'api_key'    => 'secret_key',
-	                                  'api_format' => 'json'));
+	                                			 'api_key'    => 'secret_key',
+	                                			 'api_format' => 'json'));
 
 	// Get newsletters
 	$newsletters = $this->sendgrid_newsletter->list_newsletters();
