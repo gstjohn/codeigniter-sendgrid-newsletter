@@ -6,11 +6,11 @@
  * Wrapper for working with the SendGrid Newsletter API
  *
  * @package CodeIgniter
- * @version 0.1.0
+ * @version 0.1.1
  * @author Bold
  * @link http://hellobold.com
  */
-class Sendgrid
+class Sendgrid_Newsletter
 {
 
 	protected $api_endpoint  = 'https://sendgrid.com/api/';
@@ -36,7 +36,7 @@ class Sendgrid
 		// initialize parameters
 		$this->initialize($params);
 
-		log_message('debug', 'SendGrid Class Initialized');
+		log_message('debug', 'SendGrid Newsletter Class Initialized');
 	}
 
 	// --------------------------------------------------------------------

@@ -1,6 +1,6 @@
-# CodeIgniter-SendGrid-API
+# CodeIgniter-SendGrid-Newsletter
 
-CodeIgniter-SendGrid-API is a CodeIgniter wrapper for the [SendGrid Newsletter API](http://docs.sendgrid.com/documentation/api/newsletter-api/).
+CodeIgniter-SendGrid-Newsletter is a CodeIgniter wrapper for the [SendGrid Newsletter API](http://docs.sendgrid.com/documentation/api/newsletter-Newsletter/).
 
 ## Requirements
 
@@ -63,12 +63,12 @@ CodeIgniter-SendGrid-API is a CodeIgniter wrapper for the [SendGrid Newsletter A
 ## Usage
 
 	// Load the SendGrid spark
-	$this->load->spark('sendgrid/0.1.0');
+	$this->load->spark('sendgrid/0.1.1');
 
 	// Initialize (not necessary if set in config)
-	$this->sendgrid->initialize(array('api_user'   => 'my_username',
+	$this->sendgrid_newsletter->initialize(array('api_user'   => 'my_username',
 	                                  'api_key'    => 'secret_key',
 	                                  'api_format' => 'json'));
 
 	// Get newsletters
-	$newsletters = $this->sendgrid->list_newsletters();
+	$newsletters = $this->sendgrid_newsletter->list_newsletters();
