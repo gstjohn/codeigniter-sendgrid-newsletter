@@ -63,7 +63,7 @@ CodeIgniter-SendGrid-Newsletter is a CodeIgniter wrapper for the [SendGrid Newsl
 ## Usage
 
 	// Load the SendGrid spark
-	$this->load->spark('sendgrid/0.1.0');
+	$this->load->spark('sendgrid/0.1.1');
 
 	// Initialize (not necessary if set in config)
 	$this->sendgrid_newsletter->initialize(array('api_user'   => 'my_username',
