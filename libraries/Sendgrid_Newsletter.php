@@ -10,7 +10,7 @@
  * @author Bold
  * @link http://hellobold.com
  */
-class Sendgrid
+class Sendgrid_Newsletter
 {
 
 	protected $api_endpoint  = 'https://sendgrid.com/api/';
@@ -36,7 +36,7 @@ class Sendgrid
 		// initialize parameters
 		$this->initialize($params);
 
-		log_message('debug', 'SendGrid Class Initialized');
+		log_message('debug', 'SendGrid Newsletter Class Initialized');
 	}
 
 	// --------------------------------------------------------------------
