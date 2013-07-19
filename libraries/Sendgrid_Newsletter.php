@@ -238,16 +238,107 @@ class Sendgrid_Newsletter
 	// --------------------------------------------------------------------
 
 	/**
-	 * Add one or more emails to a list
+	 * Add one or more emails (recipients) to a list
 	 *
 	 * @access public
-	 * @param string $list The list to which email addresses will be added
-	 * @param string $data Valid JSON string describing the entries (limit 1000). Ex: {"email":"address@domain.com","name":"Contact Name"}
+	 * @param string $list The list to which recipients will be added
+	 * @param array $data A collection of recipients (see _add_list_emails)
 	 * @return bool
 	 */
 	public function add_list_emails($list, $data)
 	{
-		return $this->_send('newsletter/lists/email/add.' . $this->api_format, array('list' => $list, 'data' => $data));
+		return $this->_add_list_emails($list, $data);
+	}
+
+	/**
+	 * Add one or more emails (recipients) to a list
+	 * (Required due to the format SendGrid expects recipients to be added to recipient lists)
+	 * 
+	 * @access private
+	 * @param string $list The list to which recipients will be added
+	 * @param array $recipient_data A collection of recipients e.g.:
+	 * [0] => Array
+     * (
+     *      [email] => address1@domain.com
+     *      [name] => contactName
+     *      [custom1] => customProperty
+	 * 		...
+     * )
+     * [1] => Array
+     * (
+     *      [email] => address2@domain.com
+     *      [name] => contactName
+     *      [custom1] => customProperty
+	 * 		...
+     * )
+	 * ...
+	 * @return bool/string Result
+	 */
+	private function _add_list_emails($list, $recipient_data)
+	{
+		// Create recipient object(s) that conform to the format the SendGrid API is expecting e.g. {"email":"address@domain.com","name":"contactName"}.
+		$recipients = array();
+		foreach ($recipient_data as $recipient_data_item)
+		{
+			$recipients[] = json_encode((object) $recipient_data_item);
+		}
+
+		// Create cURL session.
+		$curl = curl_init($this->api_endpoint . 'newsletter/lists/email/add.' . $this->api_format);
+		
+		// Create URL encoded query string that conforms to the format SendGrid expects i.e. array elements unindexed.
+		$query_string_args = array('api_user' => $this->api_user, 'api_key' => $this->api_key, 'list' => $list, 'data' => $recipients);
+		$query_string = http_build_query($query_string_args, NULL, '&');
+		$query_string = preg_replace('/\%5B\d+\%5D/', '%5B%5D', $query_string);
+		
+		// Set default cURL session options.
+		$options = array(
+			CURLOPT_FAILONERROR => FALSE,
+			CURLOPT_CUSTOMREQUEST => 'POST',
+			CURLOPT_POST => TRUE,
+			CURLOPT_POSTFIELDS => $query_string,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_RETURNTRANSFER => TRUE,
+			CURLOPT_FOLLOWLOCATION => TRUE,
+			CURLOPT_HTTPHEADER => array('Accept: application/' . $this->api_format));
+		curl_setopt_array($curl, $options);
+		
+		// Execute & close cURL session.
+		$response = curl_exec($curl);
+		$info = curl_getinfo($curl);
+		$response_code = $info['http_code'];
+		curl_close($curl);
+		
+		// Format response.
+		if ($this->api_format == 'json')
+		{
+			$response = json_decode(trim($response));
+		}
+		else if ($this->api_format == 'xml')
+		{
+			$response = unserialize(trim($response));
+		}
+		
+		// check for 4xx reponse code
+		if (substr($response_code, 0, 1) == 4)
+		{
+			$this->error_message = $response->error . '.';
+			return FALSE;
+		}
+		// check for 5xx response codes
+        elseif (substr($response_code, 0, 1) == 5)
+        {
+            $this->error_message = 'Access to SendGrid failed. Please try again later.';
+            return FALSE;
+        }
+		// check for an error message response
+		elseif (isset($response->error))
+		{
+			$this->error_message = $response->error . '.';
+			return FALSE;
+		}
+		
+		return $response;
 	}
 
 	// --------------------------------------------------------------------
